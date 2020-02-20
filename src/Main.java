@@ -8,6 +8,6 @@ public class Main {
         stringList.append('!');
         stringList.insert(4, "test");
         System.out.println(stringList);
-        System.out.println(stringList.substring(0, 18));
+        System.out.println(stringList.substring(0, 5).append("hell"));
     }
 }

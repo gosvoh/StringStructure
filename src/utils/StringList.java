@@ -40,6 +40,8 @@ public class StringList {
     private StringItem _head, _tail;
     private int length, count;
 
+    /* ***Constructors*** */
+
     public StringList() {
     }
 
@@ -258,7 +260,8 @@ public class StringList {
     /**
      * Установить символ в указанном месте
      *
-     * @param index индекс символа
+     * @param index  индекс символа
+     * @param symbol символ для добавления
      */
     public void setCharAt(int index, char symbol) {
         checkIndex(index, this.length);
