@@ -69,6 +69,14 @@ public class StringListV2 {
             this.position = index;
             this.node = node;
         }
+
+        public StringItem moveToNextNode() {
+            if (node != null && node.hasNext()) {
+                node = node.next;
+                return node;
+            }
+            return null;
+        }
     }
 
     /**
@@ -83,6 +91,7 @@ public class StringListV2 {
      * Количество элементов списка
      */
     private int _countOfNodes;
+    //private Position _currentPosition;
 
     /**
      * Default constructor
@@ -96,6 +105,14 @@ public class StringListV2 {
      * @param string строка
      */
     public StringListV2(String string) throws ExecutionControl.NotImplementedException {
+        this._length = string.length();
+        if (this._length <= 16) {
+            addNodeToTail(string.toCharArray());
+            return;
+        }
+
+
+
         throw new ExecutionControl.NotImplementedException("Not implemented yet");
     }
 
@@ -104,12 +121,18 @@ public class StringListV2 {
      *
      * @param stringList список
      */
-    public StringListV2(StringListV2 stringList) throws ExecutionControl.NotImplementedException {
-        this._head = stringList._head;
-        this._length = stringList._length;
-        this._countOfNodes = stringList._countOfNodes;
-
-        throw new ExecutionControl.NotImplementedException("Not implemented yet");
+    public StringListV2(StringListV2 stringList) {
+        if (stringList == null || stringList._head == null)
+            appendEmpty();
+        else {
+            StringItem node = stringList._head;
+            while (node.hasNext()) {
+                addNodeToTail(node.symbols);
+                node = node.next;
+            }
+            this._length = stringList._length;
+            this._countOfNodes = stringList._countOfNodes;
+        }
     }
 
     //--------------------------Приватные методы--------------------------------
@@ -127,7 +150,7 @@ public class StringListV2 {
                 node.next = node.next.next;
             else
                 node.next = null;
-            _countOfNodes--;
+            --_countOfNodes;
             sortNode(node);
         }
     }
@@ -176,12 +199,30 @@ public class StringListV2 {
      *
      * @return элемент хвоста списка
      */
-    private StringItem addNodeToTail() throws ExecutionControl.NotImplementedException {
+    private StringItem addNodeToTail() {
+        return addNodeToTail(new char[0]);
+    }
+
+    /**
+     * Добавить нод в хвост списка
+     *
+     * @param symbols элементы массива
+     * @return элемент хвоста списка
+     */
+    private StringItem addNodeToTail(char[] symbols) {
         StringItem node = new StringItem();
+        if (symbols.length != 0) {
+            if (symbols.length > StringItem.SIZE)
+                throw new IllegalArgumentException("Количество элементов массива больше, чем может быть!");
+            node.symbols = new char[StringItem.SIZE];
+            System.arraycopy(symbols, 0, node.symbols, 0, countCharLength(symbols));
+            node.len = countCharLength(symbols);
+        }
         if (_head == null)
             _head = node;
         else
             getLastNode().next = node;
+        ++_countOfNodes;
         return node;
     }
 
@@ -237,6 +278,11 @@ public class StringListV2 {
         if (position == null)
             throw new NullPointerException("Position is null, error in checkIndex method");
         return position;
+    }
+
+    private StringListV2 appendEmpty() {
+        addNodeToTail(new char[]{'n', 'u', 'l', 'l'});
+        return this;
     }
     //--------------------------------------------------------------------------
 
@@ -305,6 +351,9 @@ public class StringListV2 {
      */
     public StringListV2 insert(int index, StringListV2 stringList) throws ExecutionControl.NotImplementedException {
         checkIndex(index, this._length);
+
+        StringItem node = getPosition(index).node;
+
         throw new ExecutionControl.NotImplementedException("Not implemented yet");
     }
 
@@ -317,6 +366,8 @@ public class StringListV2 {
      */
     public StringListV2 substring(int beginIndex, int endIndex) throws ExecutionControl.NotImplementedException {
         checkBoundsBeginEnd(beginIndex, endIndex, this._length);
+        if (endIndex - beginIndex == _length)
+            return this;
         return new StringListV2(this.toString().substring(beginIndex, endIndex));
     }
 
