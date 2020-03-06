@@ -1,6 +1,7 @@
 package utils;
 
 import java.util.Objects;
+import java.util.concurrent.locks.Condition;
 
 public class StringList {
     /**
@@ -84,10 +85,6 @@ public class StringList {
      * Длина строки
      */
     private int _length;
-    /**
-     * Количество элементов списка
-     */
-    private int _countOfNodes;
 
     /**
      * Default constructor
@@ -129,7 +126,6 @@ public class StringList {
                 node = node.next;
             }
             this._length = stringList._length;
-            this._countOfNodes = stringList._countOfNodes;
         }
     }
 
@@ -148,7 +144,6 @@ public class StringList {
                 node.next = node.next.next;
             else
                 node.next = null;
-            --_countOfNodes;
             sortNode(node);
         }
     }
@@ -220,7 +215,6 @@ public class StringList {
             _head = node;
         else
             getLastNode().next = node;
-        ++_countOfNodes;
         return node;
     }
 
@@ -280,7 +274,6 @@ public class StringList {
 
     private StringList appendEmpty() {
         addNodeToTail(new char[]{'n', 'u', 'l', 'l'});
-        this._length += 4;
         return this;
     }
     //--------------------------------------------------------------------------
@@ -402,15 +395,6 @@ public class StringList {
         return this._length;
     }
 
-    /**
-     * Получмть количество элементов списка
-     *
-     * @return количество элементов списка
-     */
-    public int getCountOfNodes() {
-        return _countOfNodes;
-    }
-
     //--------------------------Object method overrides-------------------------
 
     /**
@@ -445,7 +429,6 @@ public class StringList {
         if (o == null || getClass() != o.getClass()) return false;
         StringList that = (StringList) o;
         return _length == that._length &&
-                _countOfNodes == that._countOfNodes &&
                 _head.equals(that._head);
     }
 
@@ -456,6 +439,6 @@ public class StringList {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(_head, _length, _countOfNodes);
+        return Objects.hash(_head, _length);
     }
 }
