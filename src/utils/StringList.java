@@ -4,6 +4,7 @@ import java.util.Objects;
 
 /**
  * @author Vokhmin Aleksey {@literal <}vohmina2011@yandex.ru{@literal >}
+ * Java 8
  */
 
 public class StringList {
@@ -36,6 +37,7 @@ public class StringList {
          */
         public StringItem() {
             symbols = new char[StringItem.SIZE];
+            len = 0;
         }
 
         /**
@@ -102,16 +104,34 @@ public class StringList {
      * @param string строка
      */
     public StringList(String string) {
-        if (string.length() <= StringItem.SIZE)
-            addNodeToTail(string.toCharArray());
+        StringItem node = new StringItem();
+        _head = node;
+        if (string.length() <= StringItem.SIZE) {
+            System.arraycopy(string.toCharArray(), 0, _head.symbols, 0, string.length());
+            node.len = countCharLength(node.symbols);
+            _length += _head.len;
+        }
         else {
             int offset = 0;
             int tempLen = string.length() / StringItem.SIZE;
+            StringItem tail = _head;
+            char[] substring;
             for (int i = 0; i < tempLen; i++) {
-                addNodeToTail(string.substring(offset, (i + 1) * StringItem.SIZE).toCharArray());
+                node = addNodeAfter(tail);
+                substring = string.substring(offset, (i + 1) * StringItem.SIZE).toCharArray();
+                System.arraycopy(substring, 0, node.symbols, 0, substring.length);
+                node.len = countCharLength(node.symbols);
+                tail.next = node;
+                tail = node;
+                _length += node.len;
                 offset += StringItem.SIZE;
             }
-            addNodeToTail(string.substring(offset).toCharArray());
+            node = addNodeAfter(tail);
+            substring = string.substring(offset).toCharArray();
+            System.arraycopy(substring, 0, node.symbols, 0, substring.length);
+            node.len = countCharLength(node.symbols);
+            tail.next = node;
+            _length += node.len;
         }
     }
 
@@ -122,10 +142,14 @@ public class StringList {
      */
     public StringList(StringList stringList) {
         if (stringList != null && stringList._head != null) {
-            StringItem node = stringList._head;
-            while (node != null) {
-                addNodeToTail(node.symbols);
-                node = node.next;
+            StringItem workingNode = stringList._head;
+            StringItem node = new StringItem();
+            _head = node;
+            while (workingNode != null) {
+                node = addNodeAfter(node);
+                node.symbols = workingNode.symbols;
+                node.len = workingNode.len;
+                workingNode = workingNode.next;
             }
             this._length = stringList._length;
         }
@@ -190,37 +214,6 @@ public class StringList {
     }
 
     /**
-     * Добавить нод в хвост списка
-     *
-     * @return элемент хвоста списка
-     */
-    private StringItem addNodeToTail() {
-        return addNodeToTail(new char[0]);
-    }
-
-    /**
-     * Добавить нод в хвост списка
-     *
-     * @param symbols элементы массива
-     * @return элемент хвоста списка
-     */
-    private StringItem addNodeToTail(char[] symbols) {
-        StringItem node = new StringItem();
-        if (symbols.length != 0) {
-            if (symbols.length > StringItem.SIZE)
-                throw new IllegalArgumentException("Количество элементов массива больше, чем может быть!");
-            System.arraycopy(symbols, 0, node.symbols, 0, countCharLength(symbols));
-            node.len = countCharLength(symbols);
-            this._length += node.len;
-        }
-        if (_head == null)
-            _head = node;
-        else
-            getLastNode().next = node;
-        return node;
-    }
-
-    /**
      * Добавляет новый нод после указаного нода
      *
      * @param node нод, после которого добавляем элемент
@@ -260,6 +253,7 @@ public class StringList {
      * @return объект класса {@link Position}
      */
     private Position getPosition(int index) {
+        checkIndex(index, _length);
         StringItem node = _head;
         Position position = null;
         while (index > StringItem.SIZE && node != null) {
@@ -293,11 +287,14 @@ public class StringList {
      */
     public StringList append(StringList stringList) {
         if (stringList != null && stringList._head != null) {
-            StringItem node = stringList._head;
-            while (node != null) {
-                //TODO Подумать над тем как улучшить код и не проходить каждый раз по списку
-                addNodeToTail(node.symbols);
-                node = node.next;
+            StringItem workingNode = stringList._head;
+            StringItem tail = getLastNode();
+            while (workingNode != null) {
+                tail = addNodeAfter(tail);
+                tail.symbols = workingNode.symbols;
+                tail.len = workingNode.len;
+                _length += tail.len;
+                workingNode = workingNode.next;
             }
         }
         return this;
@@ -350,8 +347,8 @@ public class StringList {
         Position position = getPosition(index);
         StringItem prevNode = new StringItem();
         StringItem nextNode = new StringItem();
-        System.arraycopy(position.node.symbols, 0, prevNode.symbols, 0, index);
-        System.arraycopy(position.node.symbols, index, nextNode.symbols, 0, StringItem.SIZE - index);
+        System.arraycopy(position.node.symbols, 0, prevNode.symbols, 0, position.position);
+        System.arraycopy(position.node.symbols, position.position, nextNode.symbols, 0, StringItem.SIZE - position.position);
         prevNode.len = countCharLength(prevNode.symbols);
         nextNode.len = countCharLength(nextNode.symbols);
         nextNode.next = position.node.next;
@@ -400,10 +397,8 @@ public class StringList {
             // Цикл для добавления символов из блоков, находящихся между первым и последним блоками
             while (workingNode != secondPosition.node) {
                 node = retList.addNodeAfter(tailOfRetList);
-                // Функциональный комментарий для IDE IntelliJ IDEA
-                //noinspection SuspiciousSystemArraycopy
-                System.arraycopy(workingNode.symbols, 0, node.symbols, 0, StringItem.SIZE);
-                node.len = countCharLength(node.symbols);
+                node.symbols = workingNode.symbols;
+                node.len = workingNode.len;
                 retList._length += node.len;
                 tailOfRetList = node;
                 workingNode = workingNode.next;
