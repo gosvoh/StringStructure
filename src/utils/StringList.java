@@ -1,7 +1,10 @@
 package utils;
 
 import java.util.Objects;
-import java.util.concurrent.locks.Condition;
+
+/**
+ * @author Vokhmin Aleksey {@literal <}vohmina2011@yandex.ru{@literal >}
+ */
 
 public class StringList {
     /**
@@ -103,7 +106,8 @@ public class StringList {
             addNodeToTail(string.toCharArray());
         else {
             int offset = 0;
-            for (int i = 0; i < string.length() / StringItem.SIZE; i++) {
+            int tempLen = string.length() / StringItem.SIZE;
+            for (int i = 0; i < tempLen; i++) {
                 addNodeToTail(string.substring(offset, (i + 1) * StringItem.SIZE).toCharArray());
                 offset += StringItem.SIZE;
             }
@@ -117,9 +121,7 @@ public class StringList {
      * @param stringList список
      */
     public StringList(StringList stringList) {
-        if (stringList == null || stringList._head == null)
-            appendEmpty();
-        else {
+        if (stringList != null && stringList._head != null) {
             StringItem node = stringList._head;
             while (node != null) {
                 addNodeToTail(node.symbols);
@@ -271,11 +273,6 @@ public class StringList {
             throw new NullPointerException("Position is null, error in checkIndex method");
         return position;
     }
-
-    private StringList appendEmpty() {
-        addNodeToTail(new char[]{'n', 'u', 'l', 'l'});
-        return this;
-    }
     //--------------------------------------------------------------------------
 
     /**
@@ -295,11 +292,10 @@ public class StringList {
      * @return ссылку на этот объект
      */
     public StringList append(StringList stringList) {
-        if (stringList == null || stringList._head == null)
-            appendEmpty();
-        else {
+        if (stringList != null && stringList._head != null) {
             StringItem node = stringList._head;
             while (node != null) {
+                //TODO Подумать над тем как улучшить код и не проходить каждый раз по списку
                 addNodeToTail(node.symbols);
                 node = node.next;
             }
@@ -360,7 +356,7 @@ public class StringList {
         nextNode.len = countCharLength(nextNode.symbols);
         nextNode.next = position.node.next;
 
-        StringList workList = new StringList(stringList);
+        StringList workList = new StringList(stringList);   //ВОЗМОЖНАЯ КОПИЯ КОПИИ
         prevNode.next = workList._head;
         workList.getLastNode().next = nextNode;
         this._length += workList._length;
@@ -383,7 +379,42 @@ public class StringList {
         checkBoundsBeginEnd(beginIndex, endIndex, this._length);
         if (endIndex - beginIndex == _length)
             return this;
-        return new StringList(this.toString().substring(beginIndex, endIndex));
+
+        Position firstPosition = getPosition(beginIndex);
+        Position secondPosition = getPosition(endIndex);
+        StringList retList = new StringList();
+        StringItem node = new StringItem();
+        if (firstPosition.node == secondPosition.node) {
+            System.arraycopy(firstPosition.node.symbols, firstPosition.position, node.symbols, 0, secondPosition.position - firstPosition.position);
+            node.len = countCharLength(node.symbols);
+            retList._head = node;
+            retList._length += node.len;
+        } else {
+            // Добавляем часть символов из первого блока, начиная с указанной позиции
+            System.arraycopy(firstPosition.node.symbols, firstPosition.position, node.symbols, 0, StringItem.SIZE - firstPosition.position);
+            node.len = countCharLength(node.symbols);
+            retList._head = node;
+            retList._length += node.len;
+            StringItem workingNode = firstPosition.node.next;
+            StringItem tailOfRetList = retList._head;
+            // Цикл для добавления символов из блоков, находящихся между первым и последним блоками
+            while (workingNode != secondPosition.node) {
+                node = retList.addNodeAfter(tailOfRetList);
+                // Функциональный комментарий для IDE IntelliJ IDEA
+                //noinspection SuspiciousSystemArraycopy
+                System.arraycopy(workingNode.symbols, 0, node.symbols, 0, StringItem.SIZE);
+                node.len = countCharLength(node.symbols);
+                retList._length += node.len;
+                tailOfRetList = node;
+                workingNode = workingNode.next;
+            }
+            // Добавляем часть символов из последнего блока, находящихся до указанной позиции
+            node = retList.addNodeAfter(tailOfRetList);
+            System.arraycopy(secondPosition.node.symbols, 0, node.symbols, 0, secondPosition.position);
+            node.len = countCharLength(node.symbols);
+            retList._length += node.len;
+        }
+        return retList;
     }
 
     /**
