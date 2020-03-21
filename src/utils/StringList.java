@@ -462,27 +462,18 @@ public class StringList {
         return new String(ret);
     }
 
-    /**
-     * Переопределение метода.
-     *
-     * @return true, если это один и тот же объект
-     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StringList that = (StringList) o;
         return _length == that._length &&
-                _head.equals(that._head);
+                isFromString == that.isFromString &&
+                Objects.equals(_head, that._head);
     }
 
-    /**
-     * Переопределение метода.
-     *
-     * @return хэш объекта
-     */
     @Override
     public int hashCode() {
-        return Objects.hash(_head, _length);
+        return Objects.hash(_head, _length, isFromString);
     }
 }
