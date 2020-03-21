@@ -90,6 +90,10 @@ public class StringList {
      * Длина строки
      */
     private int _length;
+    /**
+     * Является ли этот список производным от String
+     */
+    private boolean isFromString = false;
 
     /**
      * Default constructor
@@ -104,14 +108,14 @@ public class StringList {
      * @param string строка
      */
     public StringList(String string) {
+        isFromString = true;
         StringItem node = new StringItem();
         _head = node;
         if (string.length() <= StringItem.SIZE) {
             System.arraycopy(string.toCharArray(), 0, _head.symbols, 0, string.length());
             node.len = countCharLength(node.symbols);
             _length += _head.len;
-        }
-        else {
+        } else {
             int offset = 0;
             int tempLen = string.length() / StringItem.SIZE;
             StringItem tail = _head;
@@ -152,6 +156,7 @@ public class StringList {
                 workingNode = workingNode.next;
             }
             this._length = stringList._length;
+            this.isFromString = false;
         }
     }
 
@@ -287,6 +292,7 @@ public class StringList {
      */
     public StringList append(StringList stringList) {
         if (stringList != null && stringList._head != null) {
+            /* Старый способ добавления элементов
             StringItem workingNode = stringList._head;
             StringItem tail = getLastNode();
             while (workingNode != null) {
@@ -295,7 +301,14 @@ public class StringList {
                 tail.len = workingNode.len;
                 _length += tail.len;
                 workingNode = workingNode.next;
-            }
+            }*/
+            StringList workList;
+            if (stringList.isFromString)
+                workList = stringList;
+            else
+                workList = new StringList(stringList);
+            getLastNode().next = workList._head;
+            _length += workList._length;
         }
         return this;
     }
@@ -352,8 +365,13 @@ public class StringList {
         prevNode.len = countCharLength(prevNode.symbols);
         nextNode.len = countCharLength(nextNode.symbols);
         nextNode.next = position.node.next;
+        // Проверяем, является ли переданный список производным от String
+        StringList workList;
+        if (stringList.isFromString)    // Если да, то не создаём лишнюю копию списка
+            workList = stringList;
+        else                            // А если нет, то копируем через конструктор
+            workList = new StringList(stringList);
 
-        StringList workList = new StringList(stringList);   //ВОЗМОЖНАЯ КОПИЯ КОПИИ
         prevNode.next = workList._head;
         workList.getLastNode().next = nextNode;
         this._length += workList._length;
