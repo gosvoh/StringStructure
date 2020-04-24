@@ -70,7 +70,7 @@ public class SortedList<T extends Comparable<? super T>> {
             throw new ArrayIndexOutOfBoundsException("There is no more space for new value!");
         checkPosition(position);
         for (int i = _tail; i >= position; i--)
-            swap(i + 1, i);
+            swap(i, i + 1);
         array[position] = value;
         if (_head == -1) ++_head;
         ++_tail;
@@ -211,11 +211,7 @@ public class SortedList<T extends Comparable<? super T>> {
     public int length() {
         if (_head == -1)
             return 0;
-        int len = 0;
-        for (int i = 0; i <= _tail; i++)
-            if (array[i] != null)
-                ++len;
-        return len;
+        return _tail - _head + 1;
     }
 
     /**
