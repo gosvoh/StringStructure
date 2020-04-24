@@ -4,6 +4,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Класс, представляющий собой циклический список
+ *
+ * @author Aleksei Vokhmin
+ */
 public class CyclicQueue {
     private int _head, _tail;
     private final int[] queue;

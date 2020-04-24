@@ -3,8 +3,10 @@ package utils;
 import java.util.Objects;
 
 /**
- * @author Vokhmin Aleksey {@literal <}vohmina2011@yandex.ru{@literal >}
- * Java 8
+ * Класс, представляющий собой список, принимающий объекты класса
+ * String и объекты этого же класса
+ *
+ * @author Aleksei Vokhmin
  */
 
 public class StringList {
