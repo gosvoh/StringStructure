@@ -15,6 +15,7 @@ public class CyclicQueue {
     private final ReentrantLock queueLock;
     private final Condition insertCondition;
     private final Condition removeCondition;
+    private boolean contextSwitched = false;
     private final int SIZE;
 
     /**
@@ -35,8 +36,8 @@ public class CyclicQueue {
         insertCondition = queueLock.newCondition();
         removeCondition = queueLock.newCondition();
         this.SIZE = SIZE;
-        _tail = -1;
-        _head = -1;
+        _tail = 9;
+        _head = 0;
     }
 
     /**
@@ -50,11 +51,9 @@ public class CyclicQueue {
                 if (!insertCondition.await(5, TimeUnit.SECONDS))
                     throw new RuntimeException("Cannot insert new Item");
 
-            if (_head == -1) _head = 0;
-            _tail = (_tail + 1) % SIZE;
+            _tail = next(_tail);
             queue[_tail] = value;
-
-            System.out.println("Item " + value + " was added to position " + _tail);
+            System.out.println(Thread.currentThread().getName() + " added item " + value + " to position " + _tail);
             System.out.println(this);
             removeCondition.signalAll();
         } catch (InterruptedException e) {
@@ -76,11 +75,8 @@ public class CyclicQueue {
                     throw new RuntimeException("Cannot remove Item");
 
             int remVal = queue[_head];
-            System.out.println("Item " + remVal + " was removed from position " + _head);
-            if (_head == _tail) {
-                _head = -1;
-                _tail = -1;
-            } else _head = (_head + 1) % SIZE;
+            System.out.println(Thread.currentThread().getName() + " removed item " + remVal + " from position " + _head);
+            _head = next(_head);
             System.out.println(this);
             insertCondition.signalAll();
         } catch (InterruptedException e) {
@@ -91,21 +87,31 @@ public class CyclicQueue {
     }
 
     /**
-     * Проверяем полность очереди
+     * Проверяем полность очереди, если она полная, то
+     * говорим что контекст изменился
      *
      * @return true, если очередь полная
      */
     public boolean isFull() {
-        return ((_head == 0) && (_tail == SIZE - 1)) || (_head == _tail + 1);
+        if (next(next(_tail)) == _head) {
+            contextSwitched = true;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
-     * Проверяем пустоту очереди
+     * Проверяем пустоту очереди, если она пуста, то
+     * говорим что контекст изменился
      *
      * @return true, если очередь пуста
      */
     public boolean isEmpty() {
-        return _head == -1;
+        if (next(_tail) == _head) {
+            contextSwitched = true;
+            return true;
+        } else return false;
     }
 
     @Override
@@ -120,5 +126,31 @@ public class CyclicQueue {
         stringBuilder.append(queue[i]);
 
         return stringBuilder.toString();
+    }
+
+    /**
+     * Получить следующую позицию после указанной
+     *
+     * @param position позиция
+     * @return следующая позиция
+     */
+    private int next(int position) {
+        return (position + 1) % SIZE;
+    }
+
+    /**
+     * Смотрим, изменился ли контекст
+     *
+     * @return true, если контекст был изменён
+     */
+    public boolean isContextSwitched() {
+        return contextSwitched;
+    }
+
+    /**
+     * Сбрасываем переменную изменения контекста
+     */
+    public void resetContextSwitched() {
+        this.contextSwitched = false;
     }
 }
