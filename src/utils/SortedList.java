@@ -9,32 +9,17 @@ package utils;
 public class SortedList<T extends Comparable<? super T>> {
 
     private final int SIZE;
-    private final Object[] array;
+    private final T[] array;
     private int _head, _tail;
 
     /**
-     * Конструктор с передаваемым массивом указаного типа и
-     * стандартным размером списка, равным 10
+     * Конструктор с передаваемым массивом указаного типа
      *
      * @param array массив
-     * @throws ArrayIndexOutOfBoundsException если передаваемый массив больше максимального размера
      */
     public SortedList(T[] array) {
-        this(10, array);
-    }
-
-    /**
-     * Конструктор с передаваемым массивом указаного типа и максимальным размером списка
-     *
-     * @param size  размер списка
-     * @param array массив
-     * @throws ArrayIndexOutOfBoundsException если передаваемый массив больше максимального размера
-     */
-    public SortedList(int size, T[] array) {
-        this.SIZE = size;
-        if (array.length > SIZE)
-            throw new ArrayIndexOutOfBoundsException("Size of argument array is more than expected! Max size is " + SIZE);
-        this.array = new Object[SIZE];
+        this.array = array;
+        this.SIZE = array.length;
         int realLen = 0;
         for (int i = 0; i < array.length; i++) {
             if (array[i] != null) {
@@ -83,11 +68,9 @@ public class SortedList<T extends Comparable<? super T>> {
      * @return позиция элемента
      * @throws IllegalArgumentException если элемент не найден в списке
      */
-    @SuppressWarnings("unchecked")
     public int locate(T value) {
         for (int i = 0; i < end(); i++) {
-            T val = (T) array[i];
-            if (val.equals(value))
+            if (array[i].equals(value))
                 return i;
         }
         throw new IllegalArgumentException("Wrong value!");
@@ -100,12 +83,11 @@ public class SortedList<T extends Comparable<? super T>> {
      * @return элемент
      * @throws IllegalArgumentException если позиция неверна
      */
-    @SuppressWarnings("unchecked")
     public T retrieve(int position) {
         checkPosition(position);
         if (array[position] == null)
             throw new IllegalArgumentException("Wrong position!");
-        return (T) array[position];
+        return array[position];
     }
 
     /**
@@ -142,7 +124,7 @@ public class SortedList<T extends Comparable<? super T>> {
     public int next(int position) {
         checkPosition(position);
         if (position == end())
-            throw new IllegalArgumentException("Wrong position!");
+            throw new IllegalArgumentException("There's no elements after!");
         return position + 1;
     }
 
@@ -156,7 +138,7 @@ public class SortedList<T extends Comparable<? super T>> {
     public int previous(int position) {
         checkPosition(position);
         if (position == first())
-            throw new IllegalArgumentException("Wrong position!");
+            throw new IllegalArgumentException("There's no elements before!");
         return position - 1;
     }
 
@@ -221,7 +203,7 @@ public class SortedList<T extends Comparable<? super T>> {
      * @param pos2 второй элемент
      */
     private void swap(int pos1, int pos2) {
-        Object val = array[pos1];
+        T val = array[pos1];
         array[pos1] = array[pos2];
         array[pos2] = val;
     }
@@ -229,14 +211,12 @@ public class SortedList<T extends Comparable<? super T>> {
     /**
      * Простая пузырьковая сортировка
      */
-    @SuppressWarnings("unchecked")
     public void sort() {
         boolean isSorted = false;
         while (!isSorted) {
             isSorted = true;
             for (int i = 0; i < _tail; i++) {
-                T val = (T) array[i];
-                if (val.compareTo((T) array[i + 1]) > 0) {
+                if (array[i].compareTo(array[i + 1]) > 0) {
                     isSorted = false;
                     swap(i, i + 1);
                 }
