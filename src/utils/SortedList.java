@@ -10,7 +10,7 @@ public class SortedList<T extends Comparable<? super T>> {
 
     private final int SIZE;
     private final T[] array;
-    private int _head, _tail;
+    private int _tail;
 
     /**
      * Конструктор с передаваемым массивом указаного типа
@@ -20,15 +20,7 @@ public class SortedList<T extends Comparable<? super T>> {
     public SortedList(T[] array) {
         this.array = array;
         this.SIZE = array.length;
-        int realLen = 0;
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] != null) {
-                this.array[i] = array[i];
-                ++realLen;
-            }
-        }
-        _head = realLen == 0 ? -1 : 0;
-        _tail = realLen == 0 ? -1 : realLen;
+        this._tail = -1;
     }
 
     /**
@@ -37,8 +29,6 @@ public class SortedList<T extends Comparable<? super T>> {
      * @return конец списка +1
      */
     public int end() {
-        if (_head == -1)
-            return 0;
         return _tail + 1;
     }
 
@@ -47,17 +37,17 @@ public class SortedList<T extends Comparable<? super T>> {
      *
      * @param value    элемент
      * @param position позиция
-     * @throws IllegalArgumentException       если позиция неверна
      * @throws ArrayIndexOutOfBoundsException если больше нет места в масиве
      */
     public void insert(T value, int position) {
         if (length() >= SIZE)
             throw new ArrayIndexOutOfBoundsException("There is no more space for new value!");
-        checkPosition(position);
-        for (int i = _tail; i >= position; i--)
-            swap(i, i + 1);
+        if (checkPosition(position))
+            return;
+        //for (int i = _tail; i >= position; i--)  <- Это более старая версия того,
+        //    array[i + 1] = array[i];                что написано ниже.
+        System.arraycopy(array, position, array, position + 1, _tail + 1 - position);
         array[position] = value;
-        if (_head == -1) ++_head;
         ++_tail;
     }
 
@@ -69,7 +59,7 @@ public class SortedList<T extends Comparable<? super T>> {
      * @throws IllegalArgumentException если элемент не найден в списке
      */
     public int locate(T value) {
-        for (int i = 0; i < end(); i++) {
+        for (int i = 0; i < _tail + 1; i++) {
             if (array[i].equals(value))
                 return i;
         }
@@ -84,7 +74,8 @@ public class SortedList<T extends Comparable<? super T>> {
      * @throws IllegalArgumentException если позиция неверна
      */
     public T retrieve(int position) {
-        checkPosition(position);
+        if (checkPosition(position))
+            throw new IllegalArgumentException("Wrong position!");
         if (array[position] == null)
             throw new IllegalArgumentException("Wrong position!");
         return array[position];
@@ -98,18 +89,15 @@ public class SortedList<T extends Comparable<? super T>> {
      * @throws ArrayIndexOutOfBoundsException если список пуст
      */
     public void delete(int position) {
-        if (_head == -1)
-            throw new ArrayIndexOutOfBoundsException("Nothing to delete!");
-        checkPosition(position);
-        if (position == end())
-            throw new IllegalArgumentException("Wrong position! Position must be >= 0 and < " + end());
+        if (checkPosition(position))
+            return;
         array[position] = null;
-        if (length() == 0) {
-            _head = -1;
+        if (_tail == 0) {
             _tail = -1;
         } else {
-            for (int i = position; i <= _tail; i++)
-                swap(i, i + 1);
+            //for (int i = position; i <= _tail; i++)  <- Это более старая версия того,
+            //    array[i] = array[i + 1];                что написано ниже.
+            System.arraycopy(array, position + 1, array, position, _tail + 1 - position);
             --_tail;
         }
     }
@@ -122,8 +110,9 @@ public class SortedList<T extends Comparable<? super T>> {
      * @throws IllegalArgumentException если позиция неверна
      */
     public int next(int position) {
-        checkPosition(position);
-        if (position == end())
+        if (checkPosition(position))
+            throw new IllegalArgumentException("Wrong position!");
+        if (position >= _tail + 1)
             throw new IllegalArgumentException("There's no elements after!");
         return position + 1;
     }
@@ -136,8 +125,9 @@ public class SortedList<T extends Comparable<? super T>> {
      * @throws IllegalArgumentException если позиция неверна
      */
     public int previous(int position) {
-        checkPosition(position);
-        if (position == first())
+        if (checkPosition(position))
+            throw new IllegalArgumentException("Wrong position!");
+        if (position == 0)
             throw new IllegalArgumentException("There's no elements before!");
         return position - 1;
     }
@@ -146,13 +136,6 @@ public class SortedList<T extends Comparable<? super T>> {
      * Обнулить список
      */
     public void makeNull() {
-        while (_tail != _head) {
-            array[_tail] = null;
-            --_tail;
-        }
-        if (_head != -1)
-            array[_head] = null;
-        _head = -1;
         _tail = -1;
     }
 
@@ -162,9 +145,7 @@ public class SortedList<T extends Comparable<? super T>> {
      * @return позиция первого элемента
      */
     public int first() {
-        if (_head == -1)
-            return end();
-        return _head;
+        return 0;
     }
 
     /**
@@ -180,9 +161,8 @@ public class SortedList<T extends Comparable<? super T>> {
      * @param position позиция для проверки
      * @throws IllegalArgumentException если позиция неверна
      */
-    private void checkPosition(int position) {
-        if (position > SIZE || position < 0 || _head != -1 && (position > end() || position < first()))
-            throw new IllegalArgumentException("Wrong position! Position must be >= 0 and <= " + end());
+    private boolean checkPosition(int position) {
+        return position > SIZE || position < 0;
     }
 
     /**
@@ -191,13 +171,12 @@ public class SortedList<T extends Comparable<? super T>> {
      * @return размер списка
      */
     public int length() {
-        if (_head == -1)
-            return 0;
-        return _tail - _head + 1;
+        return _tail + 1;
     }
 
     /**
      * Поменять элементы массива местами
+     * Метод требуется для сортировки
      *
      * @param pos1 первый элемент
      * @param pos2 второй элемент
@@ -226,7 +205,7 @@ public class SortedList<T extends Comparable<? super T>> {
 
     @Override
     public String toString() {
-        if (_head == -1) return "List is empty!";
+        if (_tail == -1) return "List is empty!";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < _tail; i++)
             sb.append(array[i]).append(" ");
