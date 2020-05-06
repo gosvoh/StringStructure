@@ -18,11 +18,17 @@ public class Fraction implements Comparable<Fraction> {
      * @param denominator знаменатель
      * @throws WrongFractionException если числитель меньше 0 или знаменатель меньше или равен 0
      */
-    public Fraction(int numerator, int denominator) throws WrongFractionException {
-        if (numerator < 0)
-            throw new WrongFractionException("Numerator must be greater than 0!");
-        if (denominator <= 0)
-            throw new WrongFractionException("Denominator is 0 or less! To infinity and beyond!");
+    public Fraction(int numerator, int denominator) {
+        if (denominator == 0)
+            throw new WrongFractionException("Denominator is 0! To infinity and beyond!");
+        if (numerator % denominator == 0) {
+            numerator = numerator / denominator;
+            denominator = 1;
+        }
+        if (denominator < 0) {
+            numerator = -numerator;
+            denominator = -denominator;
+        }
         this.numerator = numerator;
         this.denominator = denominator;
     }
@@ -35,14 +41,14 @@ public class Fraction implements Comparable<Fraction> {
      * @return новый объект класса
      * @throws WrongFractionException если числитель меньше 0 или знаменатель меньше или равен 0
      */
-    public static Fraction valueOf(int numerator, int denominator) throws WrongFractionException {
+    public static Fraction valueOf(int numerator, int denominator) {
         return new Fraction(numerator, denominator);
     }
 
     /**
      * Представление дроби в виде строки со сокращением.
      * Если знаменатель равен 1, то убираем его.
-     * Если числитель больше знаменателя и если удаётся поделить бробь без остатка,
+     * Если модуль числителя больше знаменателя и если удаётся поделить дробь без остатка,
      * то возвращаем сокращённое целочисленное число или возвращаем целую часть + остаток со знаменателем,
      * иначе просто возвращаем дробь.
      *
@@ -51,20 +57,12 @@ public class Fraction implements Comparable<Fraction> {
     @Override
     public String toString() {
         if (numerator == 0) return "0";
-        // Сокращаем дробь, если числитель равен знаменателю
         if (numerator == denominator) return "1";
-        // Если знаменатель равен 1, то убираем его
         if (denominator == 1) return String.valueOf(numerator);
-        // Если числитель больше знаменателя...
-        if (numerator > denominator) {
-            // ...и если удаётся поделить бробь без остатка...
-            if (numerator % denominator == 0)
-                // ...то возвращаем сокращённое целочисленное число...
-                return String.valueOf(numerator / denominator);
-            // ...или возвращаем целую часть + остаток со знаменателем.
-            return numerator / denominator + "+" + numerator % denominator + "/" + denominator;
+        if (Math.abs(numerator) > denominator) {
+            return numerator > 0 ? numerator / denominator + "+" + numerator % denominator + "/" + denominator :
+                    "-(" + Math.abs(numerator) / denominator + "+" + Math.abs(numerator % denominator) + "/" + denominator + ")";
         }
-        // ...иначе просто возвращаем дробь
         return numerator + "/" + denominator;
     }
 
@@ -83,8 +81,13 @@ public class Fraction implements Comparable<Fraction> {
 
     @Override
     public int compareTo(Fraction o) {
-        Double d1 = (double) numerator / denominator;
-        Double d2 = (double) o.numerator / o.denominator;
-        return d1.compareTo(d2);
+        int numThis = this.numerator;
+        int numOther = o.numerator;
+        if (this.denominator != o.denominator) {
+            numThis = numThis * o.denominator;
+            numOther = numOther * this.denominator;
+        }
+        //Для того, чтобы не писать три условия, легче оиспользовать встроенный метод Integer'a
+        return Integer.compare(numThis, numOther);
     }
 }
