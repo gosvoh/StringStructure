@@ -15,7 +15,7 @@ public class CyclicQueue {
     private final ReentrantLock queueLock;
     private final Condition insertCondition;
     private final Condition removeCondition;
-    private boolean contextSwitched = false;
+    private boolean contextSwitched = false, prevWasInsert = true;
     private final int SIZE;
 
     /**
@@ -51,6 +51,12 @@ public class CyclicQueue {
                 if (!insertCondition.await(5, TimeUnit.SECONDS))
                     throw new RuntimeException("Cannot insert new Item");
 
+            if (!prevWasInsert) {
+                contextSwitched = true;
+                prevWasInsert = true;
+                System.out.println("Context was switched");
+            }
+
             _tail = next(_tail);
             queue[_tail] = value;
             System.out.println(Thread.currentThread().getName() + " added item " + value + " to position " + _tail);
@@ -74,6 +80,12 @@ public class CyclicQueue {
                 if (!removeCondition.await(5, TimeUnit.SECONDS))
                     throw new RuntimeException("Cannot remove Item");
 
+            if (prevWasInsert) {
+                contextSwitched = true;
+                prevWasInsert = false;
+                System.out.println("Context switched");
+            }
+
             int remVal = queue[_head];
             System.out.println(Thread.currentThread().getName() + " removed item " + remVal + " from position " + _head);
             _head = next(_head);
@@ -93,12 +105,7 @@ public class CyclicQueue {
      * @return true, если очередь полная
      */
     public boolean isFull() {
-        if (next(next(_tail)) == _head) {
-            contextSwitched = true;
-            return true;
-        } else {
-            return false;
-        }
+        return next(next(_tail)) == _head;
     }
 
     /**
@@ -108,10 +115,7 @@ public class CyclicQueue {
      * @return true, если очередь пуста
      */
     public boolean isEmpty() {
-        if (next(_tail) == _head) {
-            contextSwitched = true;
-            return true;
-        } else return false;
+        return next(_tail) == _head;
     }
 
     @Override
@@ -121,7 +125,7 @@ public class CyclicQueue {
         StringBuilder stringBuilder = new StringBuilder();
 
         int i;
-        for (i = _head; i != _tail; i = (i + 1) % SIZE)
+        for (i = _head; i != _tail; i = next(i))
             stringBuilder.append(queue[i]).append(" ");
         stringBuilder.append(queue[i]);
 
