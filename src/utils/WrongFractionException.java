@@ -6,7 +6,7 @@ package utils;
  * @author Aleksei Vokhmin
  * @see Fraction
  */
-public class WrongFractionException extends Exception {
+public class WrongFractionException extends RuntimeException {
     public WrongFractionException() {
     }
 
