@@ -8,8 +8,17 @@ package utils;
  */
 public class SortedList<T extends Comparable<? super T>> {
 
+    /**
+     * Размер массива, инициализируется в конструкторе
+     */
     private final int SIZE;
+    /**
+     * Основной массив данных для работы, инициализируется в конструкторе
+     */
     private final T[] array;
+    /**
+     * Голова очереди
+     */
     private int _tail;
 
     /**
@@ -40,7 +49,7 @@ public class SortedList<T extends Comparable<? super T>> {
      * @throws ArrayIndexOutOfBoundsException если больше нет места в масиве
      */
     public void insert(T value, int position) {
-        if (length() >= SIZE)
+        if (_tail + 1 == SIZE)
             throw new ArrayIndexOutOfBoundsException("There is no more space for new value!");
         if (checkPosition(position))
             return;
@@ -97,7 +106,7 @@ public class SortedList<T extends Comparable<? super T>> {
         } else {
             //for (int i = position; i <= _tail; i++)  <- Это более старая версия того,
             //    array[i] = array[i + 1];                что написано ниже.
-            System.arraycopy(array, position + 1, array, position, _tail + 1 - position);
+            System.arraycopy(array, position + 1, array, position, _tail - position);
             --_tail;
         }
     }
@@ -166,16 +175,7 @@ public class SortedList<T extends Comparable<? super T>> {
     }
 
     /**
-     * Получить реальный размер списка
-     *
-     * @return размер списка
-     */
-    public int length() {
-        return _tail + 1;
-    }
-
-    /**
-     * Поменять элементы массива местами
+     * Поменять элементы массива местами.
      * Метод требуется для сортировки
      *
      * @param pos1 первый элемент
