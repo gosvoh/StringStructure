@@ -21,16 +21,13 @@ public class Fraction implements Comparable<Fraction> {
     public Fraction(int numerator, int denominator) {
         if (denominator == 0)
             throw new WrongFractionException("Denominator is 0! To infinity and beyond!");
-        if (numerator % denominator == 0) {
-            numerator = numerator / denominator;
-            denominator = 1;
-        }
         if (denominator < 0) {
             numerator = -numerator;
             denominator = -denominator;
         }
-        this.numerator = numerator;
-        this.denominator = denominator;
+        int GCD = this.getGCD(numerator, denominator);
+        this.numerator = numerator / GCD;
+        this.denominator = denominator / GCD;
     }
 
     /**
@@ -46,10 +43,31 @@ public class Fraction implements Comparable<Fraction> {
     }
 
     /**
+     * Получить наибольший общий делитель,
+     * алгоритм Евклида
+     *
+     * @return НОД
+     */
+    private int getGCD(int a, int b) {
+        int temp;
+        do {
+            temp = a % b;
+            a = b;
+            b = temp;
+        } while (temp != 0);
+
+        return Math.abs(a);
+    }
+
+    public Fraction copy() {
+        return valueOf(numerator, denominator);
+    }
+
+    /**
      * Представление дроби в виде строки со сокращением.
+     * Если числитель равен 0, то 0.
      * Если знаменатель равен 1, то убираем его.
-     * Если модуль числителя больше знаменателя и если удаётся поделить дробь без остатка,
-     * то возвращаем сокращённое целочисленное число или возвращаем целую часть + остаток со знаменателем,
+     * Если модуль числителя больше знаменателя, то возвращаем целую часть + остаток со знаменателем,
      * иначе просто возвращаем дробь.
      *
      * @return дробь
@@ -68,7 +86,7 @@ public class Fraction implements Comparable<Fraction> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o && this.hashCode() == o.hashCode()) return true;
         if (!(o instanceof Fraction)) return false;
         Fraction fraction = (Fraction) o;
         return this.compareTo(fraction) == 0;
@@ -81,13 +99,6 @@ public class Fraction implements Comparable<Fraction> {
 
     @Override
     public int compareTo(Fraction o) {
-        int numThis = this.numerator;
-        int numOther = o.numerator;
-        if (this.denominator != o.denominator) {
-            numThis = numThis * o.denominator;
-            numOther = numOther * this.denominator;
-        }
-        //Для того, чтобы не писать три условия, легче оиспользовать встроенный метод Integer'a
-        return Integer.compare(numThis, numOther);
+        return (this.numerator * o.denominator) - (o.numerator * this.denominator);
     }
 }
