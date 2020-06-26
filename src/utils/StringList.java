@@ -173,10 +173,8 @@ public class StringList {
         if (node.hasNext() && (node.len + node.next.len) <= StringItem.SIZE) {
             System.arraycopy(node.next.symbols, 0, node.symbols, node.len, node.next.len);
             node.len = countCharLength(node.symbols);
-            if (node.next.hasNext())
-                node.next = node.next.next;
-            else
-                node.next = null;
+            if (node.next.hasNext()) node.next = node.next.next;
+            else node.next = null;
             sortNode(node);
         }
     }
@@ -262,17 +260,11 @@ public class StringList {
     private Position getPosition(int index) {
         checkIndex(index, _length);
         StringItem node = _head;
-        Position position = null;
         while (index > StringItem.SIZE && node != null) {
             index -= node.len;
             node = node.next;
         }
-        if (index <= StringItem.SIZE) {
-            position = new Position(index, node);
-        }
-        if (position == null)
-            throw new NullPointerException("Position is null, error in checkIndex method");
-        return position;
+        return new Position(index, node);
     }
     //--------------------------------------------------------------------------
 
@@ -294,22 +286,11 @@ public class StringList {
      */
     public StringList append(StringList stringList) {
         if (stringList != null && stringList._head != null) {
-            /* Старый способ добавления элементов
-            StringItem workingNode = stringList._head;
-            StringItem tail = getLastNode();
-            while (workingNode != null) {
-                tail = addNodeAfter(tail);
-                tail.symbols = workingNode.symbols;
-                tail.len = workingNode.len;
-                _length += tail.len;
-                workingNode = workingNode.next;
-            }*/
             StringList workList;
-            if (stringList.isFromString)
-                workList = stringList;
-            else
-                workList = new StringList(stringList);
-            getLastNode().next = workList._head;
+            if (stringList.isFromString) workList = stringList;
+            else workList = new StringList(stringList);
+            if (_head == null) _head = workList._head;
+            else getLastNode().next = workList._head;
             _length += workList._length;
         }
         return this;
@@ -359,14 +340,17 @@ public class StringList {
      */
     public StringList insert(int index, StringList stringList) {
         checkIndex(index, this._length);
+
         Position position = getPosition(index);
         StringItem prevNode = new StringItem();
         StringItem nextNode = new StringItem();
+
         System.arraycopy(position.node.symbols, 0, prevNode.symbols, 0, position.position);
         System.arraycopy(position.node.symbols, position.position, nextNode.symbols, 0, StringItem.SIZE - position.position);
+
         prevNode.len = countCharLength(prevNode.symbols);
         nextNode.len = countCharLength(nextNode.symbols);
-        nextNode.next = position.node.next;
+
         // Проверяем, является ли переданный список производным от String
         StringList workList;
         if (stringList.isFromString)    // Если да, то не создаём лишнюю копию списка
@@ -375,12 +359,15 @@ public class StringList {
             workList = new StringList(stringList);
 
         prevNode.next = workList._head;
+        nextNode.next = position.node.next;
         workList.getLastNode().next = nextNode;
         this._length += workList._length;
 
         position.node.symbols = prevNode.symbols;
         position.node.len = prevNode.len;
         position.node.next = prevNode.next;
+
+        sortNode(_head);
 
         return this;
     }
@@ -399,36 +386,37 @@ public class StringList {
 
         Position firstPosition = getPosition(beginIndex);
         Position secondPosition = getPosition(endIndex);
+
         StringList retList = new StringList();
         StringItem node = new StringItem();
+        retList._head = node;
+
         if (firstPosition.node == secondPosition.node) {
             System.arraycopy(firstPosition.node.symbols, firstPosition.position, node.symbols, 0, secondPosition.position - firstPosition.position);
             node.len = countCharLength(node.symbols);
-            retList._head = node;
             retList._length += node.len;
-        } else {
-            // Добавляем часть символов из первого блока, начиная с указанной позиции
-            System.arraycopy(firstPosition.node.symbols, firstPosition.position, node.symbols, 0, StringItem.SIZE - firstPosition.position);
-            node.len = countCharLength(node.symbols);
-            retList._head = node;
-            retList._length += node.len;
-            StringItem workingNode = firstPosition.node.next;
-            StringItem tailOfRetList = retList._head;
-            // Цикл для добавления символов из блоков, находящихся между первым и последним блоками
-            while (workingNode != secondPosition.node) {
-                node = retList.addNodeAfter(tailOfRetList);
-                node.symbols = workingNode.symbols;
-                node.len = workingNode.len;
-                retList._length += node.len;
-                tailOfRetList = node;
-                workingNode = workingNode.next;
-            }
-            // Добавляем часть символов из последнего блока, находящихся до указанной позиции
-            node = retList.addNodeAfter(tailOfRetList);
-            System.arraycopy(secondPosition.node.symbols, 0, node.symbols, 0, secondPosition.position);
-            node.len = countCharLength(node.symbols);
-            retList._length += node.len;
+            return retList;
         }
+
+        // Добавляем часть символов из первого блока, начиная с указанной позиции
+        System.arraycopy(firstPosition.node.symbols, firstPosition.position, node.symbols, 0, StringItem.SIZE - firstPosition.position);
+        node.len = countCharLength(node.symbols);
+        retList._length += node.len;
+        firstPosition.node = firstPosition.node.next;
+
+        // Цикл для добавления символов из блоков, находящихся между первым и последним блоками
+        while (firstPosition.node != secondPosition.node) {
+            node = retList.addNodeAfter(node);
+            node.symbols = firstPosition.node.symbols;
+            node.len = firstPosition.node.len;
+            retList._length += node.len;
+            firstPosition.node = firstPosition.node.next;
+        }
+        // Добавляем часть символов из последнего блока, находящихся до указанной позиции
+        node = retList.addNodeAfter(node);
+        System.arraycopy(secondPosition.node.symbols, 0, node.symbols, 0, secondPosition.position);
+        node.len = countCharLength(node.symbols);
+        retList._length += node.len;
         return retList;
     }
 
@@ -470,8 +458,8 @@ public class StringList {
         if (o == null || getClass() != o.getClass()) return false;
         StringList that = (StringList) o;
         return _length == that._length &&
-                isFromString == that.isFromString &&
-                Objects.equals(_head, that._head);
+               isFromString == that.isFromString &&
+               Objects.equals(_head, that._head);
     }
 
     @Override
