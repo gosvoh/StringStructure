@@ -15,7 +15,7 @@ public class CyclicQueue {
     private final ReentrantLock queueLock;
     private final Condition insertCondition;
     private final Condition removeCondition;
-    private boolean contextSwitched = false, prevWasInsert = true;
+    private boolean prevWasRemove = false;
     private final int SIZE;
 
     /**
@@ -51,12 +51,6 @@ public class CyclicQueue {
                 if (!insertCondition.await(5, TimeUnit.SECONDS))
                     throw new RuntimeException("Cannot insert new Item");
 
-            if (!prevWasInsert) {
-                contextSwitched = true;
-                prevWasInsert = true;
-                System.out.println("Context was switched");
-            }
-
             _tail = next(_tail);
             queue[_tail] = value;
             System.out.println(Thread.currentThread().getName() + " added item " + value + " to position " + _tail);
@@ -80,12 +74,7 @@ public class CyclicQueue {
                 if (!removeCondition.await(5, TimeUnit.SECONDS))
                     throw new RuntimeException("Cannot remove Item");
 
-            if (prevWasInsert) {
-                contextSwitched = true;
-                prevWasInsert = false;
-                System.out.println("Context switched");
-            }
-
+            prevWasRemove = true;
             int remVal = queue[_head];
             System.out.println(Thread.currentThread().getName() + " removed item " + remVal + " from position " + _head);
             _head = next(_head);
@@ -147,14 +136,14 @@ public class CyclicQueue {
      *
      * @return true, если контекст был изменён
      */
-    public boolean isContextSwitched() {
-        return contextSwitched;
+    public boolean isPrevWasRemove() {
+        return prevWasRemove;
     }
 
     /**
      * Сбрасываем переменную изменения контекста
      */
-    public void resetContextSwitched() {
-        this.contextSwitched = false;
+    public void resetPrevWasRemove() {
+        prevWasRemove = false;
     }
 }
